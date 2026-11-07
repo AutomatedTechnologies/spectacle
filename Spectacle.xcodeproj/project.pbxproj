@@ -45,7 +45,6 @@
 		2D5A83051CDAFDEB00EBE80A /* SpectacleShortcutJSONStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D5A83041CDAFDEB00EBE80A /* SpectacleShortcutJSONStorage.m */; };
 		2D5A83091CDB020A00EBE80A /* SpectacleMigratingShortcutStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D5A83081CDB020A00EBE80A /* SpectacleMigratingShortcutStorage.m */; };
 		2D5A830F1CDC475B00EBE80A /* SpectacleDefaultShortcutHelpers.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D5A830E1CDC475B00EBE80A /* SpectacleDefaultShortcutHelpers.m */; };
-		2D5CCCE915E96F740009CC43 /* dsa_public.pem in Resources */ = {isa = PBXBuildFile; fileRef = 2D5CCCE815E96F740009CC43 /* dsa_public.pem */; };
 		2D7146541CCC12A6003B8292 /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 2D7146521CCC12A6003B8292 /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		2D71466B1CCC1715003B8292 /* Expecta.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2D7146671CCC1715003B8292 /* Expecta.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		2D71466C1CCC1715003B8292 /* OCHamcrest.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2D7146681CCC1715003B8292 /* OCHamcrest.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -196,7 +195,6 @@
 		2D5A830C1CDC363B00EBE80A /* SpectacleShortcutStorageMigrationDestination.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = SpectacleShortcutStorageMigrationDestination.h; path = Spectacle/Sources/SpectacleShortcutStorageMigrationDestination.h; sourceTree = "<group>"; };
 		2D5A830D1CDC475B00EBE80A /* SpectacleDefaultShortcutHelpers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SpectacleDefaultShortcutHelpers.h; path = Spectacle/Sources/SpectacleDefaultShortcutHelpers.h; sourceTree = "<group>"; };
 		2D5A830E1CDC475B00EBE80A /* SpectacleDefaultShortcutHelpers.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; name = SpectacleDefaultShortcutHelpers.m; path = Spectacle/Sources/SpectacleDefaultShortcutHelpers.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
-		2D5CCCE815E96F740009CC43 /* dsa_public.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = dsa_public.pem; path = Spectacle/Resources/Certificates/dsa_public.pem; sourceTree = "<group>"; };
 		2D7146521CCC12A6003B8292 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Sparkle.framework; path = Carthage/Build/Mac/Sparkle.framework; sourceTree = "<group>"; };
 		2D7146671CCC1715003B8292 /* Expecta.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Expecta.framework; path = ../Carthage/Build/Mac/Expecta.framework; sourceTree = "<group>"; };
 		2D7146681CCC1715003B8292 /* OCHamcrest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OCHamcrest.framework; path = ../Carthage/Build/Mac/OCHamcrest.framework; sourceTree = "<group>"; };
@@ -361,7 +359,6 @@
 		2D5CCCE715E96F4F0009CC43 /* Certificates */ = {
 			isa = PBXGroup;
 			children = (
-				2D5CCCE815E96F740009CC43 /* dsa_public.pem */,
 			);
 			name = Certificates;
 			sourceTree = "<group>";
@@ -654,7 +651,6 @@
 			files = (
 				2DC4E3D41AD84E5C0022ABF0 /* Credits.rtf in Resources */,
 				2D8DA04D147E0FA0003BE1D3 /* Defaults.plist in Resources */,
-				2D5CCCE915E96F740009CC43 /* dsa_public.pem in Resources */,
 				2DA23EFC1B7D736100C9E8EF /* Images.xcassets in Resources */,
 				2DC4E3D51AD84E5C0022ABF0 /* InfoPlist.strings in Resources */,
 				2DC4E3D61AD84E5C0022ABF0 /* Localizable.strings in Resources */,

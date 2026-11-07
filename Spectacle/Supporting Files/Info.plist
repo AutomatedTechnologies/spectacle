@@ -33,10 +33,8 @@
 	<key>SUAllowsAutomaticUpdates</key>
 	<false/>
 	<key>SUEnableAutomaticChecks</key>
-	<true/>
+	<false/>
 	<key>SUFeedURL</key>
-	<string>https://spectacleapp.com/updates/appcast.xml</string>
-	<key>SUPublicDSAKeyFile</key>
-	<string>dsa_public.pem</string>
+	<string>https://detroitautomationacademy.com/updates/spectacle/appcast.xml</string>
 </dict>
 </plist>
