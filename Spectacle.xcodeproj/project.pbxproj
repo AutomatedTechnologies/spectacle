@@ -944,7 +944,7 @@
 				);
 				INFOPLIST_FILE = "Spectacle/Supporting Files/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.divisiblebyzero.Spectacle;
+				PRODUCT_BUNDLE_IDENTIFIER = com.detroitautomationacademy.spectacle;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -961,7 +961,7 @@
 				);
 				INFOPLIST_FILE = "Spectacle/Supporting Files/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.divisiblebyzero.Spectacle;
+				PRODUCT_BUNDLE_IDENTIFIER = com.detroitautomationacademy.spectacle;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

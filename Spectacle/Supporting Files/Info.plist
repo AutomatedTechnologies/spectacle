@@ -36,5 +36,18 @@
 	<false/>
 	<key>SUFeedURL</key>
 	<string>https://detroitautomationacademy.com/updates/spectacle/appcast.xml</string>
+	<key>com.detroitautomationacademy.audit</key>
+	<dict>
+		<key>Disassembled</key>
+		<true/>
+		<key>Scanned</key>
+		<true/>
+		<key>Recompiled</key>
+		<true/>
+		<key>Authority</key>
+		<string>Detroit Automation Academy</string>
+		<key>Date</key>
+		<string>2026-11-08</string>
+	</dict>
 </dict>
 </plist>

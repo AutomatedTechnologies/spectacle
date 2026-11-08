@@ -1,0 +1,74 @@
+name: Build Test
+
+on:
+  push:
+    branches: [build-test]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch Sparkle 1.22.0 (official prebuilt)
+        run: |
+          set -euo pipefail
+          curl -L -o /tmp/Sparkle-1.22.0.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/1.22.0/Sparkle-1.22.0.tar.bz2
+          mkdir -p /tmp/sparkle-extract
+          tar -xjf /tmp/Sparkle-1.22.0.tar.bz2 -C /tmp/sparkle-extract
+          find /tmp/sparkle-extract -maxdepth 3 -print
+          FW=$(find /tmp/sparkle-extract -name "Sparkle.framework" -type d | head -1)
+          test -n "$FW"
+          mkdir -p Carthage/Build/Mac
+          cp -R "$FW" Carthage/Build/Mac/Sparkle.framework
+          ls -la Carthage/Build/Mac/Sparkle.framework
+
+      - name: Build Spectacle (Release, x86_64, 10.13)
+        run: |
+          set -o pipefail
+          xcodebuild -project Spectacle.xcodeproj -target Spectacle -configuration Release -derivedDataPath ./DerivedData CODE_SIGNING_ALLOWED=NO MACOSX_DEPLOYMENT_TARGET=10.13 ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO build 2>&1 | tee xcodebuild.log
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: xcodebuild.log
+
+      - name: Package
+        run: |
+          set -euo pipefail
+          APP=$(find ./DerivedData/Build/Products/Release -maxdepth 1 -name "Spectacle.app" -type d | head -1)
+          test -n "$APP"
+          ls -la "$APP/Contents"
+          ditto -c -k --sequesterRsrc --keepParent "$APP" Spectacle-test.zip
+          ls -lh Spectacle-test.zip
+          shasum -a 256 Spectacle-test.zip
+
+      - name: Upload survival artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Spectacle-test-zip
+          path: Spectacle-test.zip
+
+      - name: Publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="spectacle-test-${{ github.run_number }}"
+          cat > release-notes.md <<'EOF'
+          First Academy CI build of Spectacle.
+
+          - Academy bundle ID: com.detroitautomationacademy.spectacle
+          - Audit entry embedded in Info.plist (com.detroitautomationacademy.audit, 2026-11-08)
+          - Sparkle stays 1.22.0 for this first package (official prebuilt framework fetched in CI instead of carthage bootstrap); the 2.9.6 + EdDSA migration remains the packaging-tranche decision.
+          - NOT rig-verified on High Sierra hardware.
+          - Audit findings remain OPEN.
+          EOF
+          gh release create "$TAG" Spectacle-test.zip --prerelease --title "$TAG" --notes-file release-notes.md
