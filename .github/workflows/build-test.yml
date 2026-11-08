@@ -22,11 +22,12 @@ jobs:
           mkdir -p /tmp/sparkle-extract
           tar -xjf /tmp/Sparkle-1.22.0.tar.bz2 -C /tmp/sparkle-extract
           find /tmp/sparkle-extract -maxdepth 3 -print
-          FW=$(find /tmp/sparkle-extract -name "Sparkle.framework" -type d | head -1)
-          test -n "$FW"
+          test -d /tmp/sparkle-extract/Sparkle.framework
           mkdir -p Carthage/Build/Mac
-          cp -R "$FW" Carthage/Build/Mac/Sparkle.framework
+          ditto /tmp/sparkle-extract/Sparkle.framework Carthage/Build/Mac/Sparkle.framework
           ls -la Carthage/Build/Mac/Sparkle.framework
+          ls -la Carthage/Build/Mac/Sparkle.framework/Versions/A/Headers | head
+          test -f Carthage/Build/Mac/Sparkle.framework/Headers/Sparkle.h
 
       - name: Build Spectacle (Release, x86_64, 10.13)
         run: |
