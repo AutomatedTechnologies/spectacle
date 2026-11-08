@@ -1,3 +1,5 @@
+> **Academy fork notice (Detroit Automation Academy):** This is the Detroit Automation Academy's maintained fork of Spectacle (upstream: https://github.com/eczarny/spectacle, original author Eric Czarny + contributors, MIT license). Fork point: master `e75c341ec2cba179c1bb8aa726a870c4132207df`. The Academy maintains a High Sierra (macOS 10.13) build; Academy bundle ID `com.detroitautomationacademy.spectacle`. Full provenance: see [PROVENANCE.md](PROVENANCE.md).
+
 # Spectacle
 
 [![Build Status](https://travis-ci.org/eczarny/spectacle.svg?branch=master)](https://travis-ci.org/eczarny/spectacle)
