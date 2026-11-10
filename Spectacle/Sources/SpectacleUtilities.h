@@ -4,6 +4,8 @@
 
 + (NSString *)applicationVersion;
 
++ (NSString *)applicationBuildVersion;
+
 + (void)registerDefaultsForBundle:(NSBundle *)bundle;
 
 + (void)displayRunningInBackgroundAlertWithCallback:(void (^)(BOOL, BOOL))callback;

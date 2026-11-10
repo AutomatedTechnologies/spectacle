@@ -60,6 +60,9 @@
 		2D7C114A1B86C7CD00B81E11 /* SpectacleShortcutUserDefaultsStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D7C11491B86C7CD00B81E11 /* SpectacleShortcutUserDefaultsStorage.m */; };
 		2D7CF9EB1C6FED50004DC708 /* SpectacleWindowPositionCalculator.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D7CF9EA1C6FED50004DC708 /* SpectacleWindowPositionCalculator.m */; };
 		2D8DA04D147E0FA0003BE1D3 /* Defaults.plist in Resources */ = {isa = PBXBuildFile; fileRef = 0706C0431191092B0068F04B /* Defaults.plist */; };
+		DA5D10022CA5000100000001 /* startup-sound.wav in Resources */ = {isa = PBXBuildFile; fileRef = DA5D10012CA5000100000001 /* startup-sound.wav */; };
+		DA5D10042CA5000100000001 /* LICENSE-ACADEMY.txt in Resources */ = {isa = PBXBuildFile; fileRef = DA5D10032CA5000100000001 /* LICENSE-ACADEMY.txt */; };
+		DA5D10062CA5000100000001 /* NOTICE.txt in Resources */ = {isa = PBXBuildFile; fileRef = DA5D10052CA5000100000001 /* NOTICE.txt */; };
 		2D8DA056147E113D003BE1D3 /* SpectacleShortcutManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 07678096118679C600614FB5 /* SpectacleShortcutManager.m */; };
 		2D8DA057147E113D003BE1D3 /* SpectacleUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 07BB542C1186662F0045663F /* SpectacleUtilities.m */; };
 		2D8DA058147E113D003BE1D3 /* SpectacleWindowPositionManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 072EACFF118A4D5A0015FC8A /* SpectacleWindowPositionManager.m */; };
@@ -117,6 +120,9 @@
 
 /* Begin PBXFileReference section */
 		0706C0431191092B0068F04B /* Defaults.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Defaults.plist; path = "Spectacle/Resources/Property Lists/Defaults.plist"; sourceTree = "<group>"; };
+		DA5D10012CA5000100000001 /* startup-sound.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = "startup-sound.wav"; path = "Spectacle/Resources/startup-sound.wav"; sourceTree = "<group>"; };
+		DA5D10032CA5000100000001 /* LICENSE-ACADEMY.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "LICENSE-ACADEMY.txt"; path = "Spectacle/Resources/LICENSE-ACADEMY.txt"; sourceTree = "<group>"; };
+		DA5D10052CA5000100000001 /* NOTICE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = NOTICE.txt; path = "Spectacle/Resources/NOTICE.txt"; sourceTree = "<group>"; };
 		072EACFE118A4D5A0015FC8A /* SpectacleWindowPositionManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; name = SpectacleWindowPositionManager.h; path = Spectacle/Sources/SpectacleWindowPositionManager.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
 		072EACFF118A4D5A0015FC8A /* SpectacleWindowPositionManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; name = SpectacleWindowPositionManager.m; path = Spectacle/Sources/SpectacleWindowPositionManager.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		07678095118679C600614FB5 /* SpectacleShortcutManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; name = SpectacleShortcutManager.h; path = Spectacle/Sources/SpectacleShortcutManager.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
@@ -323,6 +329,9 @@
 				0747DAEB1183AAE700F75DD2 /* Property Lists */,
 				2DB2DC22181ECFCF0008A192 /* Scripts */,
 				2DC4E3CA1AD84E5C0022ABF0 /* Credits.rtf */,
+				DA5D10012CA5000100000001 /* startup-sound.wav */,
+				DA5D10032CA5000100000001 /* LICENSE-ACADEMY.txt */,
+				DA5D10052CA5000100000001 /* NOTICE.txt */,
 				2DA23EFB1B7D736100C9E8EF /* Images.xcassets */,
 				2DC4E3CC1AD84E5C0022ABF0 /* InfoPlist.strings */,
 				2DC4E3CE1AD84E5C0022ABF0 /* Localizable.strings */,
@@ -651,6 +660,9 @@
 			files = (
 				2DC4E3D41AD84E5C0022ABF0 /* Credits.rtf in Resources */,
 				2D8DA04D147E0FA0003BE1D3 /* Defaults.plist in Resources */,
+				DA5D10022CA5000100000001 /* startup-sound.wav in Resources */,
+				DA5D10042CA5000100000001 /* LICENSE-ACADEMY.txt in Resources */,
+				DA5D10062CA5000100000001 /* NOTICE.txt in Resources */,
 				2DA23EFC1B7D736100C9E8EF /* Images.xcassets in Resources */,
 				2DC4E3D51AD84E5C0022ABF0 /* InfoPlist.strings in Resources */,
 				2DC4E3D61AD84E5C0022ABF0 /* Localizable.strings in Resources */,

@@ -29,6 +29,13 @@ jobs:
           ls -la Carthage/Build/Mac/Sparkle.framework/Versions/A/Headers | head
           test -f Carthage/Build/Mac/Sparkle.framework/Headers/Sparkle.h
 
+      - name: Stamp build version (SDS-10 10.2)
+        run: |
+          set -euo pipefail
+          TAG="spectacle-test-${{ github.run_number }}"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $TAG" "Spectacle/Supporting Files/Info.plist"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "Spectacle/Supporting Files/Info.plist"
+
       - name: Build Spectacle (Release, x86_64, 10.13)
         run: |
           set -o pipefail
@@ -40,6 +47,21 @@ jobs:
         with:
           name: xcodebuild-log
           path: xcodebuild.log
+
+      - name: Verify SDS-10 conformance in built app
+        run: |
+          set -euo pipefail
+          APP=$(find ./build/Release -maxdepth 1 -name "Spectacle.app" -type d | head -1)
+          test -n "$APP"
+          TAG="spectacle-test-${{ github.run_number }}"
+          V=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP/Contents/Info.plist")
+          echo "CFBundleVersion=$V tag=$TAG"
+          test "$V" = "$TAG"
+          test "$(shasum -a 256 "$APP/Contents/Resources/startup-sound.wav" | awk '{print $1}')" = "07a113244c6b432b22954a089ce519bd239311b14a48f26ae85214ed8c25b09a"
+          test -f "$APP/Contents/Resources/LICENSE-ACADEMY.txt"
+          test -f "$APP/Contents/Resources/NOTICE.txt"
+          /usr/libexec/PlistBuddy -c "Print :com.detroitautomationacademy.conformance" "$APP/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c "Print :com.detroitautomationacademy.audit" "$APP/Contents/Info.plist"
 
       - name: Package
         run: |
@@ -64,11 +86,14 @@ jobs:
           set -euo pipefail
           TAG="spectacle-test-${{ github.run_number }}"
           cat > release-notes.md <<'EOF'
-          First Academy CI build of Spectacle.
+          SDS-10 conformance build of Spectacle (tranche SDS10-T2, adapted form per SDS-10 10.4.5).
 
           - Academy bundle ID: com.detroitautomationacademy.spectacle
-          - Audit entry embedded in Info.plist (com.detroitautomationacademy.audit, 2026-11-08)
-          - Sparkle stays 1.22.0 for this first package (official prebuilt framework fetched in CI instead of carthage bootstrap); the 2.9.6 + EdDSA migration remains the packaging-tranche decision.
+          - Version at startup, adapted form: CFBundleVersion is this build's tag (stamped in CI from the run number); SpectacleAppDelegate's showAboutPanel: presents the About panel with the runtime-read build version (SpectacleUtilities.applicationBuildVersion), and installVersionMenuItem adds the same runtime-read version to the status-item menu.
+          - Startup sound at first presentation: playStartupSound plays the bundled startup-sound.wav once at launch; the asset is byte-identical to the Academy library master (SHA-256 07a113244c6b432b22954a089ce519bd239311b14a48f26ae85214ed8c25b09a, verified in CI against the built app).
+          - Conformance attested in Info.plist: com.detroitautomationacademy.conformance (SDS-10; Logo / VersionAtStartup / StartupSound / MenuBar, 2026-11-10), beside the complete Academy audit entry (com.detroitautomationacademy.audit, 2026-11-10).
+          - IP protection: LICENSE-ACADEMY.txt + NOTICE.txt bundled in Resources (Academy layer only; upstream LICENSE ships intact).
+          - Sparkle stays 1.22.0 (official prebuilt framework fetched in CI instead of carthage bootstrap); the 2.9.6 + EdDSA migration remains the packaging-tranche decision.
           - NOT rig-verified on High Sierra hardware.
           - Audit findings remain OPEN.
           EOF

@@ -12,6 +12,19 @@
   return bundleVersion;
 }
 
++ (NSString *)applicationBuildVersion
+{
+  // SDS-10 10.2.2: the build identifier shown by the About panel and the
+  // status-item menu is read from the bundle's own Info.plist at runtime
+  // (CFBundleVersion), never hardcoded into the interface.
+  NSBundle *mainBundle = NSBundle.mainBundle;
+  NSString *buildVersion = mainBundle.infoDictionary[@"CFBundleVersion"];
+  if (!buildVersion) {
+    buildVersion = mainBundle.infoDictionary[@"CFBundleShortVersionString"];
+  }
+  return buildVersion;
+}
+
 + (void)registerDefaultsForBundle:(NSBundle *)bundle
 {
   NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;

@@ -27,6 +27,8 @@
   NSSet<NSString *> *_blacklistedApplications;
   NSMutableSet<NSString *> *_disabledApplications;
   BOOL _shortcutsAreDisabledForAnHour;
+  NSSound *_startupSound;
+  BOOL _startupSoundPlayed;
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
@@ -115,6 +117,8 @@
   }
   [[SUUpdater sharedUpdater] setAutomaticallyChecksForUpdates:automaticallyChecksForUpdates];
   [self updateShortcutMenuItems];
+  [self installVersionMenuItem];
+  [self playStartupSound];
   if (!AXIsProcessTrustedWithOptions(NULL)) {
     [[NSApplication sharedApplication] runModalForWindow:self.accessiblityAccessDialogWindow];
   }
@@ -125,6 +129,53 @@
   [self showPreferencesWindow:self];
 
   return YES;
+}
+
+- (IBAction)showAboutPanel:(id)sender
+{
+  // SDS-10 10.2 adapted form (10.4.5): the About panel shows the build
+  // identifier read from the bundle's own Info.plist at runtime
+  // (CFBundleVersion, via SpectacleUtilities.applicationBuildVersion).
+  NSString *buildVersion = SpectacleUtilities.applicationBuildVersion;
+  NSDictionary<NSString *, id> *options = @{};
+  if (buildVersion) {
+    options = @{NSAboutPanelOptionVersion: buildVersion};
+  }
+  [NSApplication.sharedApplication orderFrontStandardAboutPanelWithOptions:options];
+}
+
+- (void)installVersionMenuItem
+{
+  // SDS-10 10.2 adapted form (10.4.5): the build identifier is visible in
+  // the status-item menu itself, directly under About Spectacle, read
+  // from the bundle's own Info.plist at runtime — never hardcoded.
+  NSString *buildVersion = SpectacleUtilities.applicationBuildVersion;
+  if (!buildVersion || !_statusItemMenu) {
+    return;
+  }
+  NSMenuItem *versionMenuItem = [[NSMenuItem alloc] initWithTitle:[NSString stringWithFormat:@"Version %@", buildVersion]
+                                                           action:nil
+                                                    keyEquivalent:@""];
+  versionMenuItem.enabled = NO;
+  [_statusItemMenu insertItem:versionMenuItem atIndex:1];
+}
+
+- (void)playStartupSound
+{
+  // SDS-10 10.3 adapted form (10.4.5): Spectacle has no welcome screen,
+  // so the standard startup sound plays once at first presentation
+  // (application launch). The bundled startup-sound.wav is byte-identical
+  // to the Academy library master; a missing asset proceeds silently.
+  if (_startupSoundPlayed) {
+    return;
+  }
+  _startupSoundPlayed = YES;
+  NSString *soundPath = [NSBundle.mainBundle pathForResource:@"startup-sound" ofType:@"wav"];
+  if (!soundPath) {
+    return;
+  }
+  _startupSound = [[NSSound alloc] initWithContentsOfFile:soundPath byReference:YES];
+  [_startupSound play];
 }
 
 - (IBAction)showPreferencesWindow:(id)sender

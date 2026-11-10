@@ -19,7 +19,7 @@
 	<key>CFBundleSignature</key>
 	<string>ZERO</string>
 	<key>CFBundleVersion</key>
-	<string>0</string>
+	<string>spectacle-test-8</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>LSMinimumSystemVersion</key>
@@ -47,7 +47,24 @@
 		<key>Authority</key>
 		<string>Detroit Automation Academy</string>
 		<key>Date</key>
-		<string>2026-11-08</string>
+		<string>2026-11-10</string>
+	</dict>
+	<key>com.detroitautomationacademy.conformance</key>
+	<dict>
+		<key>Standard</key>
+		<string>SDS-10</string>
+		<key>Logo</key>
+		<true/>
+		<key>VersionAtStartup</key>
+		<true/>
+		<key>StartupSound</key>
+		<true/>
+		<key>MenuBar</key>
+		<true/>
+		<key>Authority</key>
+		<string>Detroit Automation Academy</string>
+		<key>Date</key>
+		<string>2026-11-10</string>
 	</dict>
 </dict>
 </plist>

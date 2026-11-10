@@ -45,7 +45,7 @@
                 <menuItem title="About Spectacle" tag="-1" id="EA9-dx-Qfg">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
-                        <action selector="orderFrontStandardAboutPanel:" target="-2" id="P8D-am-ldh"/>
+                        <action selector="showAboutPanel:" target="tMJ-JP-XRD" id="P8D-am-ldh"/>
                     </connections>
                 </menuItem>
                 <menuItem title="Check for Updates..." tag="-1" id="2sj-vF-eSL">
