@@ -39,7 +39,7 @@ jobs:
       - name: Build Spectacle (Release, x86_64, 10.13)
         run: |
           set -o pipefail
-          xcodebuild -project Spectacle.xcodeproj -target Spectacle -configuration Release SYMROOT=$(pwd)/build OBJROOT=$(pwd)/build CODE_SIGNING_ALLOWED=NO MACOSX_DEPLOYMENT_TARGET=10.13 ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO 'OTHER_CFLAGS=-Wno-error=deprecated-declarations' build 2>&1 | tee xcodebuild.log
+          xcodebuild -project Spectacle.xcodeproj -target Spectacle -configuration Release SYMROOT=$(pwd)/build OBJROOT=$(pwd)/build MACOSX_DEPLOYMENT_TARGET=10.13 ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO 'OTHER_CFLAGS=-Wno-error=deprecated-declarations' build 2>&1 | tee xcodebuild.log
 
       - name: Upload build log
         if: always()
@@ -47,6 +47,39 @@ jobs:
         with:
           name: xcodebuild-log
           path: xcodebuild.log
+
+
+      - name: Sign with Academy identity (stable designated requirement)
+        env:
+          ACADEMY_CODESIGN_P12_B64: ${{ secrets.ACADEMY_CODESIGN_P12_B64 }}
+          ACADEMY_CODESIGN_P12_PASS: ${{ secrets.ACADEMY_CODESIGN_P12_PASS }}
+        run: |
+          set -euo pipefail
+          APP=$(find ./build/Release -maxdepth 1 -name "Spectacle.app" -type d | head -1)
+          test -n "$APP"
+          test -n "$ACADEMY_CODESIGN_P12_B64"
+          KC="$RUNNER_TEMP/academy-signing.keychain-db"
+          KCPASS="$(head -c 48 /dev/urandom | base64 | tr -d '/+=' | head -c 32)"
+          security create-keychain -p "$KCPASS" "$KC"
+          security set-keychain-settings -lut 3600 "$KC"
+          security unlock-keychain -p "$KCPASS" "$KC"
+          printf '%s' "$ACADEMY_CODESIGN_P12_B64" | base64 --decode > "$RUNNER_TEMP/academy.p12"
+          security import "$RUNNER_TEMP/academy.p12" -k "$KC" -P "$ACADEMY_CODESIGN_P12_PASS" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KCPASS" "$KC" >/dev/null
+          rm -f "$RUNNER_TEMP/academy.p12"
+          security find-certificate -a -c "Academy Code Signing (Self-Signed)" -p "$KC" > "$RUNNER_TEMP/academy-cert.pem"
+          security add-trusted-cert -d -r trustRoot -p codeSign -k "$KC" "$RUNNER_TEMP/academy-cert.pem" || true
+          IDENTITY=$(security find-identity -p codesigning "$KC" | awk '/Academy Code Signing/ {print $2; exit}')
+          test -n "$IDENTITY"
+          echo "Signing identity SHA-1: $IDENTITY"
+          sign_one() { codesign --force --sign "$IDENTITY" --timestamp=none "$1"; }
+          find "$APP" -type d -name "*.xpc" -print0 | while IFS= read -r -d '' p; do sign_one "$p"; done
+          find "$APP" -type d -name "*.appex" -print0 | while IFS= read -r -d '' p; do sign_one "$p"; done
+          find "$APP" -type d -name "*.app" ! -path "$APP" -print0 | while IFS= read -r -d '' p; do sign_one "$p"; done
+          find "$APP" -type f -name "*.dylib" -print0 | while IFS= read -r -d '' p; do sign_one "$p"; done
+          find "$APP" -type d -name "*.framework" -print0 | while IFS= read -r -d '' p; do sign_one "$p"; done
+          sign_one "$APP"
+          codesign --verify --verbose=2 "$APP"
 
       - name: Verify SDS-10 conformance in built app
         run: |
@@ -62,6 +95,11 @@ jobs:
           test -f "$APP/Contents/Resources/NOTICE.txt"
           /usr/libexec/PlistBuddy -c "Print :com.detroitautomationacademy.conformance" "$APP/Contents/Info.plist"
           /usr/libexec/PlistBuddy -c "Print :com.detroitautomationacademy.audit" "$APP/Contents/Info.plist"
+          test -d "$APP/Contents/_CodeSignature"
+          codesign --verify --verbose=2 "$APP"
+          codesign -d -r- "$APP" 2> designated-requirement.txt || true
+          cat designated-requirement.txt
+          grep -q "designated =>" designated-requirement.txt
 
       - name: Package
         run: |
@@ -78,6 +116,13 @@ jobs:
         with:
           name: Spectacle-test-zip
           path: Spectacle-test.zip
+
+      - name: Upload designated requirement
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: designated-requirement
+          path: designated-requirement.txt
 
       - name: Publish prerelease
         env:
@@ -97,4 +142,7 @@ jobs:
           - NOT rig-verified on High Sierra hardware.
           - Audit findings remain OPEN.
           EOF
+          echo "" >> release-notes.md
+          echo "Signed in CI with the Academy self-signed code-signing identity (CN \"Academy Code Signing (Self-Signed)\", cert SHA-256 6A:9E:DC:89:7A:11:1E:75:A0:E7:18:3A:92:B8:8E:DD:07:01:D4:20:D1:67:CF:83:92:6E:C9:BA:D1:0F:C1:12). Designated requirement extracted from the shipped bundle:" >> release-notes.md
+          cat designated-requirement.txt >> release-notes.md
           gh release create "$TAG" Spectacle-test.zip --prerelease --title "$TAG" --notes-file release-notes.md
