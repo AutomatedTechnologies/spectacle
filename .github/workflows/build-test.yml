@@ -67,12 +67,12 @@ jobs:
           security import "$RUNNER_TEMP/academy.p12" -k "$KC" -P "$ACADEMY_CODESIGN_P12_PASS" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KCPASS" "$KC" >/dev/null
           rm -f "$RUNNER_TEMP/academy.p12"
-          security find-certificate -a -c "Academy Code Signing (Self-Signed)" -p "$KC" > "$RUNNER_TEMP/academy-cert.pem"
-          security add-trusted-cert -d -r trustRoot -p codeSign -k "$KC" "$RUNNER_TEMP/academy-cert.pem" || true
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
+          security default-keychain -d user -s "$KC"
           IDENTITY=$(security find-identity -p codesigning "$KC" | awk '/Academy Code Signing/ {print $2; exit}')
           test -n "$IDENTITY"
           echo "Signing identity SHA-1: $IDENTITY"
-          sign_one() { codesign --force --sign "$IDENTITY" --timestamp=none "$1"; }
+          sign_one() { codesign --keychain "$KC" --force --sign "$IDENTITY" --timestamp=none "$1"; }
           find "$APP" -type d -name "*.xpc" -print0 | while IFS= read -r -d '' p; do sign_one "$p"; done
           find "$APP" -type d -name "*.appex" -print0 | while IFS= read -r -d '' p; do sign_one "$p"; done
           find "$APP" -type d -name "*.app" ! -path "$APP" -print0 | while IFS= read -r -d '' p; do sign_one "$p"; done
