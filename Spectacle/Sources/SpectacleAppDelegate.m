@@ -36,6 +36,7 @@ extern Boolean SecTranslocateIsTranslocatedURL(CFURLRef path, bool *isTranslocat
   BOOL _shortcutsAreDisabledForAnHour;
   NSSound *_startupSound;
   BOOL _startupSoundPlayed;
+  NSTimer *_accessibilityTrustCheckTimer;
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
@@ -66,6 +67,14 @@ extern Boolean SecTranslocateIsTranslocatedURL(CFURLRef path, bool *isTranslocat
                          selector:@selector(inputSourceSelectionDidChange)
                              name:NSTextInputContextKeyboardSelectionDidChangeNotification
                            object:nil];
+  [notificationCenter addObserver:self
+                         selector:@selector(applicationDidBecomeActive)
+                             name:NSApplicationDidBecomeActiveNotification
+                           object:nil];
+  [notificationCenter addObserver:self
+                         selector:@selector(accessibilityAccessDialogWindowWillClose:)
+                             name:NSWindowWillCloseNotification
+                           object:self.accessiblityAccessDialogWindow];
   [workspaceNotificationCenter addObserver:self
                                   selector:@selector(applicationDidActivate:)
                                       name:NSWorkspaceDidActivateApplicationNotification
@@ -125,6 +134,7 @@ extern Boolean SecTranslocateIsTranslocatedURL(CFURLRef path, bool *isTranslocat
   [[SUUpdater sharedUpdater] setAutomaticallyChecksForUpdates:automaticallyChecksForUpdates];
   [self updateShortcutMenuItems];
   [self installVersionMenuItem];
+  [self installAccessibilityMenuItem];
   [self playStartupSound];
   if ([self runningFromTranslocatedOrNonApplicationsPath]) {
     // A TCC Accessibility grant anchors to the designated requirement of
@@ -136,7 +146,7 @@ extern Boolean SecTranslocateIsTranslocatedURL(CFURLRef path, bool *isTranslocat
     // a correctly installed copy still reaches it unchanged below.
     [self showInstallLocationDialog];
   } else if (!AXIsProcessTrustedWithOptions(NULL)) {
-    [[NSApplication sharedApplication] runModalForWindow:self.accessiblityAccessDialogWindow];
+    [self showAccessibilityAccessDialog:self];
   }
 }
 
@@ -392,13 +402,109 @@ extern Boolean SecTranslocateIsTranslocatedURL(CFURLRef path, bool *isTranslocat
   [NSUserDefaults.standardUserDefaults setObject:_disabledApplications.allObjects forKey:@"DisabledApplications"];
 }
 
+#pragma mark - Accessibility access dialog (non-modal)
+
+- (void)installAccessibilityMenuItem
+{
+  // Re-show path for the Accessibility dialog while the app is untrusted:
+  // a status-item menu entry that exists for exactly that state. Its
+  // visibility is refreshed in menuWillOpen: (hidden once trusted).
+  NSMenuItem *menuItem = [[NSMenuItem alloc] initWithTitle:@"Grant Accessibility Access…"
+                                                    action:@selector(showAccessibilityAccessDialog:)
+                                             keyEquivalent:@""];
+  menuItem.target = self;
+  [_statusItemMenu insertItem:menuItem atIndex:2];
+}
+
+- (IBAction)showAccessibilityAccessDialog:(id)sender
+{
+  if (AXIsProcessTrustedWithOptions(NULL)) {
+    return;
+  }
+  NSWindow *dialogWindow = self.accessiblityAccessDialogWindow;
+  // The dialog is a normal, closable window. AppKit disables a window's
+  // close button while the window sits in a modal session, which is what
+  // made the old runModalForWindow: presentation a trap; shown non-modally
+  // the close button works, and the explicit Close button
+  // (closeAccessibilityAccessDialog:) dismisses it as well. Dismissing
+  // never quits the app and never touches the trust check: the dialog
+  // returns at the next launch and from the status-item menu for as long
+  // as the app stays untrusted.
+  dialogWindow.styleMask |= NSWindowStyleMaskClosable;
+  [dialogWindow orderFront:self];
+  [[NSApplication sharedApplication] activateIgnoringOtherApps:YES];
+  [self startAccessibilityTrustCheckTimer];
+}
+
+- (IBAction)closeAccessibilityAccessDialog:(id)sender
+{
+  [self stopAccessibilityTrustCheckTimer];
+  [self.accessiblityAccessDialogWindow orderOut:self];
+}
+
+- (void)accessibilityAccessDialogWindowWillClose:(NSNotification *)notification
+{
+  // The window's own close button was used: same dismissal semantics as
+  // the Close button -- the app keeps running, untrusted, and the dialog
+  // can be re-shown from the status-item menu or the next launch.
+  [self stopAccessibilityTrustCheckTimer];
+}
+
+- (void)startAccessibilityTrustCheckTimer
+{
+  if (_accessibilityTrustCheckTimer) {
+    return;
+  }
+  _accessibilityTrustCheckTimer = [NSTimer timerWithTimeInterval:1.0
+                                                            target:self
+                                                          selector:@selector(accessibilityTrustCheckTimerFired:)
+                                                          userInfo:nil
+                                                           repeats:YES];
+  [[NSRunLoop mainRunLoop] addTimer:_accessibilityTrustCheckTimer forMode:NSRunLoopCommonModes];
+}
+
+- (void)stopAccessibilityTrustCheckTimer
+{
+  [_accessibilityTrustCheckTimer invalidate];
+  _accessibilityTrustCheckTimer = nil;
+}
+
+- (void)accessibilityTrustCheckTimerFired:(NSTimer *)timer
+{
+  [self dismissAccessibilityAccessDialogIfTrusted];
+}
+
+- (void)applicationDidBecomeActive
+{
+  // Returning from System Preferences (or anywhere else) re-checks trust
+  // immediately instead of waiting for the next timer tick.
+  if (self.accessiblityAccessDialogWindow.visible) {
+    [self dismissAccessibilityAccessDialogIfTrusted];
+  }
+}
+
+- (void)dismissAccessibilityAccessDialogIfTrusted
+{
+  if (!AXIsProcessTrustedWithOptions(NULL)) {
+    return;
+  }
+  // Trust registered: close the dialog automatically and proceed with
+  // normal operation. Nothing else was gated behind the old modal
+  // session -- it ran as the last statement of
+  // applicationDidFinishLaunching: -- so there is no deferred startup
+  // work to replay here.
+  [self stopAccessibilityTrustCheckTimer];
+  [self.accessiblityAccessDialogWindow orderOut:self];
+}
+
 - (IBAction)openSystemPreferences:(id)sender
 {
   NSURL *preferencePaneURL = [NSURL fileURLWithPath:[SpectacleUtilities pathForPreferencePaneNamed:@"Security"]];
   NSBundle *applicationBundle = NSBundle.mainBundle;
   NSURL *scriptURL = [applicationBundle URLForResource:@"Security & Privacy System Preferences" withExtension:@"scpt"];
-  [[NSApplication sharedApplication] stopModal];
-  [self.accessiblityAccessDialogWindow orderOut:self];
+  // No stopModal/orderOut: the dialog is no longer modal (see
+  // showAccessibilityAccessDialog:). It stays up while the user grants
+  // access and closes itself the moment the grant registers.
   if (![[[NSAppleScript alloc] initWithContentsOfURL:scriptURL error:nil] executeAndReturnError:nil]) {
     [[NSWorkspace sharedWorkspace] openURL:preferencePaneURL];
   }
@@ -501,6 +607,14 @@ extern Boolean SecTranslocateIsTranslocatedURL(CFURLRef path, bool *isTranslocat
 
 - (void)menuWillOpen:(NSMenu *)menu
 {
+  // The "Grant Accessibility Access…" item (index 2, installed by
+  // installAccessibilityMenuItem) is shown only while untrusted.
+  if (_statusItemMenu.itemArray.count > 2) {
+    NSMenuItem *accessibilityMenuItem = _statusItemMenu.itemArray[2];
+    if (accessibilityMenuItem.action == @selector(showAccessibilityAccessDialog:)) {
+      accessibilityMenuItem.hidden = AXIsProcessTrustedWithOptions(NULL);
+    }
+  }
   NSRunningApplication *frontmostApplication = [NSWorkspace sharedWorkspace].frontmostApplication;
   self.disableShortcutsForApplicationMenuItem.hidden = NO;
   if ([_blacklistedApplications containsObject:frontmostApplication.bundleIdentifier]) {
