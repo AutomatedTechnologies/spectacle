@@ -236,7 +236,7 @@
                         </textFieldCell>
                     </textField>
                     <button verticalHuggingPriority="750" id="9dg-wQ-O5z">
-                        <rect key="frame" x="213" y="251" width="212" height="32"/>
+                        <rect key="frame" x="158" y="251" width="212" height="32"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="push" title="Open System Preferences" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="iPl-AT-Pei">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -247,7 +247,7 @@
                         </buttonCell>
                     </button>
                     <button verticalHuggingPriority="750" id="nIS-kz-1R7">
-                        <rect key="frame" x="425" y="251" width="147" height="32"/>
+                        <rect key="frame" x="370" y="251" width="147" height="32"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="push" title="Quit Spectacle" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="gMV-vD-CUe">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -256,6 +256,17 @@
                         <connections>
                             <action selector="terminate:" target="-2" id="bAO-EW-SfZ"/>
                         </connections>
+                    </button>
+                    <button verticalHuggingPriority="750" id="bTn-Cl-7qx">
+                        <rect key="frame" x="517" y="251" width="110" height="32"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <buttonCell key="cell" type="push" title="Close" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="bTc-Cl-8ry">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                            <connections>
+                                <action selector="closeAccessibilityAccessDialog:" target="tMJ-JP-XRD" id="bTa-Cl-9sz"/>
+                            </connections>
+                        </buttonCell>
                     </button>
                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" id="he4-Bj-XB4" propertyAccessControl="localizable">
                         <rect key="frame" x="-27" y="-383" width="835" height="653"/>
