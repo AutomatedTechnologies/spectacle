@@ -1,6 +1,13 @@
 #import "SpectacleAppDelegate.h"
 
+#import <Security/Security.h>
 #import <Sparkle/Sparkle.h>
+
+// SecTranslocateIsTranslocatedURL (Security.framework, macOS 10.12+) is not
+// declared by the 10.13 SDK headers, so it is declared here; the symbol is
+// present in Security.framework on the 10.13 floor (verified against the
+// SDK's Security.tbd).
+extern Boolean SecTranslocateIsTranslocatedURL(CFURLRef path, bool *isTranslocated, CFErrorRef * __nullable error);
 
 #import "SpectacleAccessibilityElement.h"
 #import "SpectacleDefaultShortcutHelpers.h"
@@ -119,9 +126,69 @@
   [self updateShortcutMenuItems];
   [self installVersionMenuItem];
   [self playStartupSound];
-  if (!AXIsProcessTrustedWithOptions(NULL)) {
+  if ([self runningFromTranslocatedOrNonApplicationsPath]) {
+    // A TCC Accessibility grant anchors to the designated requirement of
+    // the installed copy; it cannot follow a copy launched from Downloads
+    // or from a Gatekeeper-translocated path, so the Accessibility dialog
+    // would recur at every launch no matter how often it is granted. Name
+    // the actual problem instead of showing the Accessibility dialog. The
+    // Accessibility check itself is NOT suppressed, weakened, or bypassed:
+    // a correctly installed copy still reaches it unchanged below.
+    [self showInstallLocationDialog];
+  } else if (!AXIsProcessTrustedWithOptions(NULL)) {
     [[NSApplication sharedApplication] runModalForWindow:self.accessiblityAccessDialogWindow];
   }
+}
+
+// YES when this copy is running translocated (Gatekeeper App Translocation
+// runs a quarantined app from a randomized read-only path under
+// /private/var/folders/.../AppTranslocation/) or from anywhere outside
+// /Applications.
+- (BOOL)runningFromTranslocatedOrNonApplicationsPath
+{
+  NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
+  if ([bundlePath containsString:@"/AppTranslocation/"]) {
+    return YES;
+  }
+  // SecTranslocateIsTranslocatedURL is available on the 10.13 floor
+  // (Security.framework, macOS 10.12+).
+  bool translocated = false;
+  CFErrorRef translocationError = NULL;
+  if (SecTranslocateIsTranslocatedURL((__bridge CFURLRef)[[NSBundle mainBundle] bundleURL], &translocated, &translocationError)
+      && translocated) {
+    return YES;
+  }
+  if (translocationError) {
+    CFRelease(translocationError);
+  }
+  if (![bundlePath hasPrefix:@"/Applications/"] && ![bundlePath isEqualToString:@"/Applications/Spectacle.app"]) {
+    return YES;
+  }
+  return NO;
+}
+
+// One-time-per-launch dialog naming the install-location problem, with an
+// action that reveals the /Applications destination. This misplaced copy
+// then quits: it can never hold an Accessibility grant, and running it
+// alongside the installed copy would only re-create the confusion.
+- (void)showInstallLocationDialog
+{
+  static BOOL shownThisLaunch = NO;
+  if (shownThisLaunch) {
+    return;
+  }
+  shownThisLaunch = YES;
+  NSAlert *alert = [NSAlert new];
+  alert.alertStyle = NSWarningAlertStyle;
+  alert.messageText = @"Spectacle is not running from /Applications";
+  alert.informativeText = @"Spectacle must be in /Applications and launched from there. A copy launched from Downloads — or from a temporary translocated path — cannot keep an Accessibility permission grant, so the permission prompt would return at every launch.\n\nMove Spectacle.app into /Applications, then launch the copy there.";
+  [alert addButtonWithTitle:@"Show /Applications"];
+  [alert addButtonWithTitle:@"Quit"];
+  NSModalResponse response = [alert runModal];
+  if (response == NSAlertFirstButtonReturn) {
+    [[NSWorkspace sharedWorkspace] openURL:[NSURL fileURLWithPath:@"/Applications"]];
+  }
+  [NSApp terminate:nil];
 }
 
 - (BOOL)applicationShouldHandleReopen:(NSApplication *)application hasVisibleWindows:(BOOL)visibleWindows
