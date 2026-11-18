@@ -73,13 +73,51 @@ jobs:
           test -n "$IDENTITY"
           echo "Signing identity SHA-1: $IDENTITY"
           sign_one() { codesign --keychain "$KC" --force --sign "$IDENTITY" --timestamp=none "$1"; }
+          # Sign loose Mach-O executables that no bundle-unit pass covers
+          # (e.g. Sparkle's fileop inside Autoupdate.app, which shipped
+          # ad-hoc in spectacle-test-11 -- files/46 NEW FINDING 1).
+          # Discovered dynamically by file type, never a hardcoded list;
+          # deepest path first so each parent bundle seals the signed
+          # child. No --entitlements is passed: any upstream debug
+          # entitlement (fileop carried com.apple.security.get-task-allow)
+          # is stripped, not carried into the shipped bundle.
+          find "$APP" -type f | awk -F/ '{print NF"\t"$0}' | sort -rn | cut -f2- > "$RUNNER_TEMP/all-files.txt"
+          while IFS= read -r p; do
+            case "$p" in *.dylib) continue;; esac
+            if file -b "$p" | grep -q "Mach-O"; then
+              echo "loose Mach-O (dynamic discovery): $p"
+              sign_one "$p"
+            fi
+          done < "$RUNNER_TEMP/all-files.txt"
           find "$APP" -type d -name "*.xpc" -print0 | while IFS= read -r -d '' p; do sign_one "$p"; done
           find "$APP" -type d -name "*.appex" -print0 | while IFS= read -r -d '' p; do sign_one "$p"; done
           find "$APP" -type d -name "*.app" ! -path "$APP" -print0 | while IFS= read -r -d '' p; do sign_one "$p"; done
           find "$APP" -type f -name "*.dylib" -print0 | while IFS= read -r -d '' p; do sign_one "$p"; done
           find "$APP" -type d -name "*.framework" -print0 | while IFS= read -r -d '' p; do sign_one "$p"; done
           sign_one "$APP"
-          codesign --verify --verbose=2 "$APP"
+          # Mechanical gate (files/46): deep + strict verification of the
+          # whole bundle, and a per-Mach-O census asserting EVERY Mach-O in
+          # the bundle carries the Academy leaf in its designated
+          # requirement (non-empty CMS, Academy identity). Either failure
+          # fails the build -- a shallow `codesign --verify "$APP"` let the
+          # unsigned fileop ship in test-11 unnoticed.
+          codesign --verify --deep --strict --verbose=4 "$APP" 2>&1 | tee signing-deep-verify.txt
+          LEAF="6b6f0c224d90f67ce4331368e5156f3e02ea182a"
+          : > macho-leaf-census.txt
+          LEAF_FAIL=0
+          find "$APP" -type f > "$RUNNER_TEMP/census-files.txt"
+          while IFS= read -r p; do
+            if file -b "$p" | grep -q "Mach-O"; then
+              req="$(codesign -d -r- "$p" 2>&1)"
+              echo "$p :: $req" >> macho-leaf-census.txt
+              if ! printf '%s' "$req" | grep -q "certificate leaf = H\"$LEAF\""; then
+                echo "LEAF ASSERT FAIL: $p"
+                LEAF_FAIL=1
+              fi
+            fi
+          done < "$RUNNER_TEMP/census-files.txt"
+          cat macho-leaf-census.txt
+          test "$LEAF_FAIL" = "0"
 
       - name: Verify SDS-10 conformance in built app
         run: |
@@ -96,7 +134,7 @@ jobs:
           /usr/libexec/PlistBuddy -c "Print :com.detroitautomationacademy.conformance" "$APP/Contents/Info.plist"
           /usr/libexec/PlistBuddy -c "Print :com.detroitautomationacademy.audit" "$APP/Contents/Info.plist"
           test -d "$APP/Contents/_CodeSignature"
-          codesign --verify --verbose=2 "$APP"
+          codesign --verify --deep --strict --verbose=4 "$APP"
           codesign -d -r- "$APP" > designated-requirement.txt 2>&1 || true
           cat designated-requirement.txt
           grep -q "designated =>" designated-requirement.txt
@@ -124,6 +162,15 @@ jobs:
           name: designated-requirement
           path: designated-requirement.txt
 
+      - name: Upload signing verification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: signing-verification
+          path: |
+            signing-deep-verify.txt
+            macho-leaf-census.txt
+
       - name: Publish prerelease
         env:
           GH_TOKEN: ${{ github.token }}
@@ -145,4 +192,9 @@ jobs:
           echo "" >> release-notes.md
           echo "Signed in CI with the Academy self-signed code-signing identity (CN \"Academy Code Signing (Self-Signed)\", cert SHA-256 6A:9E:DC:89:7A:11:1E:75:A0:E7:18:3A:92:B8:8E:DD:07:01:D4:20:D1:67:CF:83:92:6E:C9:BA:D1:0F:C1:12). Designated requirement extracted from the shipped bundle:" >> release-notes.md
           cat designated-requirement.txt >> release-notes.md
-          gh release create "$TAG" Spectacle-test.zip --prerelease --title "$TAG" --notes-file release-notes.md
+          echo "" >> release-notes.md
+          echo "CI signing gate (files/46): codesign --verify --deep --strict --verbose=4 PASSED on the runner, and every Mach-O in the bundle carries the Academy leaf in its designated requirement. Per-Mach-O census:" >> release-notes.md
+          cat macho-leaf-census.txt >> release-notes.md
+          echo "" >> release-notes.md
+          echo "The Academy PUBLIC certificate (academy-codesign.cer, public key only) is attached to this release for the one-time S4 keychain trust step in Distro files/46." >> release-notes.md
+          gh release create "$TAG" Spectacle-test.zip academy-codesign.cer --prerelease --title "$TAG" --notes-file release-notes.md
