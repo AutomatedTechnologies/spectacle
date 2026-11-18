@@ -54,4 +54,8 @@
 
 - (IBAction)openSystemPreferences:(id)sender;
 
+- (IBAction)closeAccessibilityAccessDialog:(id)sender;
+
+- (IBAction)showAccessibilityAccessDialog:(id)sender;
+
 @end
